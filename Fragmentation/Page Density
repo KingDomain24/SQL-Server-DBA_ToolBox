@@ -1,0 +1,21 @@
+//You can assess page density to determine if there's unused space within the table's data pages. This query calculates the average row size and compares it to the page size
+
+
+SELECT
+    OBJECT_NAME(object_id) AS TableName,
+    AVG_RECORD_SIZE_IN_BYTES,
+    PAGE_SIZE_IN_BYTES,
+    (1 - (AVG_RECORD_SIZE_IN_BYTES * 1.0 / PAGE_SIZE_IN_BYTES)) * 100 AS InternalFragmentationPercent
+FROM
+(
+    SELECT
+        object_id,
+        SUM(used_page_count) * 8192 AS PAGE_SIZE_IN_BYTES,
+        SUM(used_page_count) * 8192 / NULLIF(SUM(row_count), 0) AS AVG_RECORD_SIZE_IN_BYTES
+    FROM
+        sys.dm_db_partition_stats
+    WHERE
+        OBJECT_NAME(object_id) = 'YourTableName'
+    GROUP BY
+        object_id
+) AS Stats
