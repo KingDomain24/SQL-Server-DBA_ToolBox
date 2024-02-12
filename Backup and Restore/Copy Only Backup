@@ -1,0 +1,5 @@
+-- Example: Copy-only full backup
+BACKUP DATABASE YourDatabaseName TO DISK = 'E:\\Backup\\YourDatabase_Copy.bak' WITH COPY_ONLY;
+
+-- Example: Copy-only log backup
+BACKUP LOG YourDatabaseName TO DISK = 'E:\\Backup\\YourDatabase_LogCopy.trn' WITH COPY_ONLY;
