@@ -1,0 +1,62 @@
+-- View Resource Governor Configuration
+SELECT * FROM sys.resource_governor_configuration;
+
+-- View Resource Governor Resource Pools
+SELECT * FROM sys.dm_resource_governor_resource_pools;
+
+-- View Resource Governor Workload Groups
+SELECT * FROM sys.dm_resource_governor_workload_groups;
+
+-- View Classifier Function Definition
+SELECT OBJECT_DEFINITION(OBJECT_ID('YourClassifierFunctionName')) AS ClassifierFunctionDefinition;
+
+-- View Resource Governor Resource Pool Statistics
+SELECT
+    rg.name AS ResourcePoolName,
+    rg.min_memory_percent,
+    rg.max_memory_percent,
+    rg.cap_memory_kb,
+    rg.used_memory_kb,
+    rg.max_dop
+FROM
+    sys.dm_resource_governor_resource_pool_volumes AS rg;
+
+-- View Resource Governor Statistics for Workload Groups
+SELECT
+    wg.name AS WorkloadGroupName,
+    wg.group_id,
+    rg.name AS ResourcePoolName,
+    rg.used_memory_kb,
+    rg.max_memory_kb,
+    rg.cap_memory_kb,
+    rg.min_memory_kb
+FROM
+    sys.dm_resource_governor_workload_groups AS wg
+JOIN
+    sys.dm_resource_governor_resource_pools AS rg ON wg.pool_id = rg.pool_id;
+
+-- View Active Sessions and Their Assigned Workload Group
+SELECT
+    session_id,
+    login_name,
+    host_name,
+    program_name,
+    wg.name AS WorkloadGroupName
+FROM
+    sys.dm_exec_sessions AS s
+JOIN
+    sys.dm_resource_governor_workload_groups AS wg ON s.group_id = wg.group_id;
+
+-- View Classifier Function Statistics
+SELECT
+    object_name AS ClassifierFunctionName,
+    counter_name,
+    instance_name,
+    cntr_value
+FROM
+    sys.dm_os_performance_counters
+WHERE
+    object_name LIKE 'SQLServer:Resource Pool Stats' AND
+    (counter_name LIKE 'Active%demotions%' OR counter_name LIKE 'Total%demotions%' OR counter_name LIKE 'Total%demotions%')
+ORDER BY
+    object_name, counter_name;
