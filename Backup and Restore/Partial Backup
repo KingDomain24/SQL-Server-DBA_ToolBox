@@ -1,0 +1,4 @@
+-- Create a partial backup for read-write filegroups
+BACKUP DATABASE YourDatabaseName READ_WRITE_FILEGROUPS TO DISK = 'E:\\Backup\\YourDatabase_Partial.bak';
+
+
