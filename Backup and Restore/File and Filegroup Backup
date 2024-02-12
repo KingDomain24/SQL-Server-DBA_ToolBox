@@ -1,0 +1,11 @@
+
+BACKUP DATABASE YourDatabaseName FILEGROUP = YourFilegroupName TO DISK = 'E:\\Backup\\YourFilegroupBackup.bak';
+
+--Back up the files in SalesGroup1.  
+BACKUP DATABASE Sales  
+   FILEGROUP = 'SalesGroup1',  
+   FILEGROUP = 'SalesGroup2'  
+   TO DISK = 'C:\MySQLServer\Backups\Sales\SalesFiles.bck'  
+   WITH   
+      DIFFERENTIAL;  
+GO
