@@ -1,0 +1,4 @@
+-- Check the transaction log to see if the transaction was fully committed or rolled back
+SELECT [Transaction ID], [Transaction Name], [Transaction State]
+FROM fn_dblog(NULL, NULL)
+WHERE [Transaction Name] = 'YourTransactionName';
