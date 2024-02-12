@@ -1,0 +1,13 @@
+SELECT 
+    r.session_id,
+    r.request_id,
+    r.transaction_id,
+    r.start_time,
+    r.transaction_isolation_level,
+    t.text AS [Query_Text]
+FROM 
+    sys.dm_exec_requests r
+CROSS APPLY 
+    sys.dm_exec_sql_text(r.sql_handle) t
+WHERE 
+    r.transaction_isolation_level IS NOT NULL;
