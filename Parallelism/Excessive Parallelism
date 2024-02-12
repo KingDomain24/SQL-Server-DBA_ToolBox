@@ -1,0 +1,23 @@
+SELECT 
+    qs.creation_time AS [Query Creation Time],
+    qp.query_plan AS [Query Execution Plan],
+    qs.total_worker_time AS [Total Worker Time],
+    qs.execution_count AS [Execution Count],
+    qs.total_elapsed_time AS [Total Elapsed Time],
+    qs.total_logical_reads AS [Total Logical Reads],
+    qs.total_physical_reads AS [Total Physical Reads],
+    qs.total_rows AS [Total Rows],
+    qs.total_logical_writes AS [Total Logical Writes],
+    qs.statement_start_offset AS [Statement Start Offset],
+    qs.statement_end_offset AS [Statement End Offset],
+    SUBSTRING(st.text, (qs.statement_start_offset / 2) + 1,
+              ((CASE qs.statement_end_offset
+                    WHEN -1 THEN DATALENGTH(st.text)
+                    ELSE qs.statement_end_offset
+                END - qs.statement_start_offset) / 2) + 1) AS [Query Text]
+FROM sys.dm_exec_query_stats AS qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) AS st
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
+WHERE qs.total_worker_time > 0
+    AND qp.query_plan LIKE '%<Parallelism%'
+ORDER BY qs.total_worker_time DESC;
