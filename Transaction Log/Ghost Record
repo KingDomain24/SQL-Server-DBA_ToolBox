@@ -1,0 +1,15 @@
+SELECT [RowLog Contents 0] ----------------
+FROM sys.fn_dblog(NULL, NULL)
+WHERE AllocUnitName = 'dbo.pagetest'
+  AND Context IN ('LCX_MARK_AS_GHOST', 'LCX_HEAP')
+  AND Operation IN ('LOP_DELETE_ROWS');
+
+
+
+SELECT
+    CONVERT(varchar(max), '0x' + CONVERT(varchar(max), [RowLog Contents 0], 1)) AS RowLogContents0,
+    CONVERT(varchar(max), '0x' + CONVERT(varchar(max), [RowLog Contents 1], 1)) AS RowLogContents1
+FROM sys.fn_dblog(NULL, NULL)
+WHERE AllocUnitName = 'dbo.pagetest'
+    AND Context IN ('LCX_MARK_AS_GHOST', 'LCX_HEAP')
+    AND Operation IN ('LOP_DELETE_ROWS');
