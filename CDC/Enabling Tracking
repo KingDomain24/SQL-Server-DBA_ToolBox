@@ -1,0 +1,7 @@
+-- Replace 'YourDatabaseName' and 'YourSchemaName' with actual values
+USE YourDatabaseName;
+EXEC sys.sp_cdc_enable_table
+    @source_schema = 'YourSchemaName',
+    @source_name = 'YourTableName',
+    @role_name = NULL,
+    @supports_net_changes = 1;
