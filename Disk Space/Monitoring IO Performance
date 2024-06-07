@@ -1,0 +1,15 @@
+SELECT
+    DB_NAME(fs.database_id) AS [Database Name],
+    mf.name AS [Logical Name],
+    mf.physical_name AS [Physical Name],
+    fs.num_of_reads AS [Reads],
+    fs.num_of_writes AS [Writes],
+    fs.num_of_bytes_read / 1024 AS [KB Read],
+    fs.num_of_bytes_written / 1024 AS [KB Written],
+    fs.io_stall_read_ms AS [IO Stall Read (ms)],
+    fs.io_stall_write_ms AS [IO Stall Write (ms)],
+    fs.io_stall_read_ms / NULLIF(fs.num_of_reads, 0) AS [Avg Read (ms)],
+    fs.io_stall_write_ms / NULLIF(fs.num_of_writes, 0) AS [Avg Write (ms)]
+FROM sys.dm_io_virtual_file_stats(NULL, NULL) AS fs
+JOIN sys.master_files AS mf ON fs.database_id = mf.database_id AND fs.file_id = mf.file_id
+ORDER BY [Database Name];
