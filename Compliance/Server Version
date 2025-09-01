@@ -1,0 +1,93 @@
+--Script-1-TSQL Script to know SQL Server Edition & Version Details.
+
+Use master
+go
+/*SCRIPT START*/
+DECLARE @cpu int, @memory decimal(2), @dbcount int, @dbs varchar(2000)
+SELECT @cpu=cpu_count FROM sys.dm_os_sys_info
+SELECT @memory= CONVERT(decimal(2),ROUND([total_physical_memory_kb]/1024.0/1024.0,1)) FROM [sys].[dm_os_sys_memory]
+SELECT @dbcount=COUNT(*) FROM sys.databases where database_id>4
+SELECT @dbs = (SELECT STUFF(
+    (
+    SELECT ', ' + DB.name
+    FROM sys.databases AS DB
+    WHERE DB.database_id>4
+    FOR XML PATH('')), 1, 2, '') AS Databases)
+SELECT 
+SERVERPROPERTY('ComputerNamePhysicalNetBIOS') as [MachineName],
+@@SERVERNAME as [SQLServerName]
+,[CPU] = @cpu
+,[Memory (GB)] = @memory
+,[Num.Databases] = @dbcount
+,[Version] = 
+    CASE WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '9%' THEN 'SQL 2005'
+        WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '10.0%' THEN 'SQL 2008'
+        WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '10.5%' THEN 'SQL 2008R2'
+        WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '11%' THEN 'SQL 2012'
+        WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '12%' THEN 'SQL 2014'
+        WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '13%' THEN 'SQL 2016'
+        WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '14%' THEN 'SQL 2017'
+        WHEN CONVERT(varchar(50), SERVERPROPERTY('ProductVersion')) LIKE '15%' THEN 'SQL 2019'
+    ELSE 'UNKNOWN' END
+,SERVERPROPERTY('ProductLevel') as [ServicePackLevel]
+,ISNULL(SERVERPROPERTY('ProductUpdateLevel'),'N/A') as [UpdateLevel]
+,ISNULL(SERVERPROPERTY('ProductUpdateReference'),'N/A') as [UpdateKBNumber]
+,SERVERPROPERTY('Edition') as [Edition]
+,SERVERPROPERTY('IsClustered') as [Clustered]
+,SERVERPROPERTY('IsHadrEnabled') as [isAlwaysON]
+--,[UserDatabasesHosted] = @dbs
+GO
+/*SCRIPT END*/
+
+
+
+--Script-2-TSQL Script to know SQL Server Edition & Version Details.
+
+Use master
+go
+SELECT  
+    SERVERPROPERTY('ServerName') AS ServerName,  
+    SERVERPROPERTY('MachineName') AS MachineName,
+    CASE 
+        WHEN  SERVERPROPERTY('InstanceName') IS NULL THEN ''
+        ELSE SERVERPROPERTY('InstanceName')
+    END AS SQLInstanceName,
+    --'' as SQLPort, --need to update to strip from Servername. Note: Assumes Registered Server is named with Port
+    SUBSTRING ( (SELECT @@VERSION),1, CHARINDEX('-',(SELECT @@VERSION))-1 ) as ProductName,
+    SERVERPROPERTY('ProductVersion') AS ProductVersion,  
+    SERVERPROPERTY('ProductLevel') AS ProductLevel,
+    SERVERPROPERTY('ProductMajorVersion') AS ProductMajorVersion,
+    --SERVERPROPERTY('ProductMinorVersion') AS ProductMinorVersion,
+    --SERVERPROPERTY('ProductBuild') AS ProductBuild,
+    SERVERPROPERTY('Edition') AS Edition,
+    CASE SERVERPROPERTY('EngineEdition')
+        WHEN 1 THEN 'PERSONAL'
+        WHEN 2 THEN 'STANDARD'
+        WHEN 3 THEN 'ENTERPRISE'
+        WHEN 4 THEN 'EXPRESS'
+        WHEN 5 THEN 'SQL DATABASE'
+        WHEN 6 THEN 'SQL DATAWAREHOUSE'
+    END AS EngineEdition,  
+    CASE SERVERPROPERTY('IsHadrEnabled')
+        WHEN 0 THEN 'Always On AG feature disabled'
+        WHEN 1 THEN 'Always On AG feature enabled'
+        ELSE 'Not applicable'
+    END AS HadrEnabled,
+    CASE SERVERPROPERTY('HadrManagerStatus')
+        WHEN 0 THEN 'Not started, pending communication'
+        WHEN 1 THEN 'Started and running'
+        WHEN 2 THEN 'Not started and failed'
+        ELSE 'Not applicable'
+    END AS HadrManagerStatus,
+    CASE SERVERPROPERTY('IsSingleUser') WHEN 0 THEN 'No' ELSE 'Yes' END AS InSingleUserMode,
+    CASE SERVERPROPERTY('IsClustered')
+        WHEN 1 THEN 'Clustered'
+        WHEN 0 THEN 'Not Clustered'
+        ELSE 'Not applicable'
+    END AS IsClustered,
+    '' as ServerEnvironment,
+    '' as ServerStatus,
+    '' as Comments
+ 
+--Reference: 
+--https://stackoverflow.com/questions/18070177/how-to-get-current-instance-name-from-t-sql
