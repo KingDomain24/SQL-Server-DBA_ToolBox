@@ -1,0 +1,86 @@
+USE DBNAME --put your db name.
+GO                                   
+DECLARE @PRNSTR NVARCHAR(MAX)       -- Print String 
+DECLARE @SQLSTR NVARCHAR(MAX)       -- SQL Command
+DECLARE @FILEID NVARCHAR(MAX)       -- FileID to be shrunk
+DECLARE @CURSIZE BIGINT             -- Current Size
+DECLARE @TARSIZE BIGINT             -- Target Size
+DECLARE @CHNSIZE BIGINT             -- Chunk Size
+DECLARE @I INT                      -- Loop Counter
+SET @FILEID='8'                     -- Set FileID        
+SET @CURSIZE=500              -- Set Current Size 
+SET @TARSIZE=300              -- Set Target Size
+SET @CHNSIZE=500             -- Set Chunk Size
+SET @I=1
+SET @CURSIZE=@CURSIZE-@CHNSIZE 
+SET @PRNSTR=  'Shrinking Process Begins for File ID : ' + @FILEID
+RAISERROR(@PRNSTR,0,1) WITH NOWAIT 
+PRINT '*~*~*~*~*~*~*~*~*~**~*~*~*~*~*~*~*~*~**~*~*'
+WHILE @CURSIZE>=@TARSIZE
+      BEGIN
+            SET @PRNSTR= 'Loop : '+ CONVERT(NVARCHAR(2),@I)+CHAR(13)+CONVERT(NVARCHAR(MAX),GETDATE(),109)
+            RAISERROR(@PRNSTR,0,1) WITH NOWAIT
+            SET @SQLSTR = 'DBCC SHRINKFILE ('+@FILEID+' , '+CONVERT(VARCHAR(MAX),@CURSIZE)+')'
+            RAISERROR(@SQLSTR,0,1) WITH NOWAIT 
+            EXEC SP_EXECUTESQL @STATEMENT=@SQLSTR
+            SET @PRNSTR=  'Shrunk till now : '+ convert(nvarchar(max),(@i*@CHNSIZE))+' MB'
+            RAISERROR(@PRNSTR,0,1) WITH NOWAIT
+            SET @PRNSTR=  '*~*~*~*~*~*~*~*~*~**~*~*~*~*~*~*~*~*~**~*~*'
+            RAISERROR(@PRNSTR,0,1) WITH NOWAIT
+            SET @CURSIZE=@CURSIZE-@CHNSIZE
+            SET @I=@I+1
+      END
+PRINT 'Shrinking Completed for given range size.'
+
+
+--Script-2-TSQL Script to shrink a particular file (data or log) in chunks
+--Need to give 3 parameters: DBName, Logical File Name, Chunk Size.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+use DBName  -- Change the DBName here.
+go
+checkpoint
+go
+ 
+DECLARE @Fileid INT, @chunkSize INT
+DECLARE @flSize DECIMAL(18,2), @spFree DECIMAL(18,2), @ActSize INT, @bufSpace INT
+DECLARE @flName VARCHAR(100), @SQLstr VARCHAR(1000)
+DECLARE @logicalfilename VARCHAR(100)
+ 
+-- sp_helpfile
+set @logicalfilename = 'put_logical_filename'
+ 
+SET @chunkSize = 500  -- No of MB to be shrunk in chunks.
+SELECT * from sysfiles
+DECLARE cur_SHRINK CURSOR FOR 
+      SELECT  Fileid, Name,
+             CAST((SIZE * 8 / 1024.0) AS DECIMAL(18,2)) AS FILESIZE, 
+              CAST((SIZE * 8 / 1024.0) - (FILEPROPERTY(Name,'SpaceUsed')/ 128.0) AS DECIMAL(15,2)) SPACEFREE
+      FROM    SYSFILES
+      WHERE  name = @logicalfilename
+OPEN cur_SHRINK
+ 
+FETCH NEXT FROM cur_SHRINK
+INTO @Fileid, @flName, @flSize, @spFree
+ 
+WHILE @@FETCH_STATUS = 0
+BEGIN
+      SET @ActSize = @flSize
+      SET @bufSpace = @flSize - @spFree + ((@flSize - @spFree)* 0.10)
+ 
+      PRINT RTRIM(@flName) + '...'
+      WHILE @ActSize > @bufSpace
+      BEGIN
+             SET @ActSize = @ActSize - @chunkSize
+             IF @ActSize < @bufSpace
+                    SET @ActSize = @bufSpace
+             SET @SQLstr = 'DBCC SHRINKFILE(' + CAST(@Fileid AS VARCHAR) + ','  + CAST(@ActSize AS VARCHAR) + ')'
+             PRINT @SQLstr
+             EXEC(@SQLstr)
+      END
+ 
+FETCH NEXT FROM cur_SHRINK
+INTO @Fileid, @flName, @flSize, @spFree
+END
+ 
+CLOSE cur_SHRINK
+DEALLOCATE cur_SHRINK
