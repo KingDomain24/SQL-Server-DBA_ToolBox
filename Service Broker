@@ -1,0 +1,47 @@
+--TSQL Script to check Service Broker Enabled or Disabled Status for all databases.
+
+
+go
+SELECT name, database_id, state_desc, is_broker_enabled 
+FROM sys.databases
+--Where name = ''
+
+Reference links:  http://zarez.net/?p=767
+
+https://stackoverflow.com/questions/1094202/enable-sql-server-broker-taking-too-long
+
+USE master;
+
+GO
+
+ALTER DATABASE DBName –Put your required DB Name here
+SET ENABLE_BROKER WITH ROLLBACK IMMEDIATE;
+
+
+https://www.mssqltips.com/sqlservertip/1836/sql-server-service-broker-example-on-how-to-configure-send-and-receive-messages/
+
+https://www.mssqltips.com/sqlservertip/2789/sql-server-service-broker-error-database-cannot-be-enabled/
+
+https://www.sqlserver-dba.com/2018/05/how-to-enable-sql-server-service-broker-.html
+
+https://www.c-sharpcorner.com/code/3179/check-if-service-broker-is-enabled-or-not-in-sql-server.aspx
+
+https://exploresqlserver.wordpress.com/2017/07/04/how-to-enable-service-broker-on-a-database/
+
+How to enable service broker on a database
+Problem:
+My production database has service broker enabled. When I refreshed my development database from production database backup, my development application started giving below error
+“Exception while starting message processor. System.InvalidOperationException: The SQL Server Service Broker for the current database is not enabled, and as a result query notifications are not supported.  Please enable the Service Broker for this database if you wish to use notifications.”
+Solution:
+When you restore a database from backup, the service broker is disabled by default.
+To enable the server broker on the server use the below command.
+ 
+Command:
+SELECT is_broker_enabled FROM sys.databases WHERE name = ‘[DATABASE NAME]’;
+ALTER DATABASE [DATABASE NAME] SET ENABLE_BROKER WITH ROLLBACK IMMEDIATE;
+ 
+Note: replace [DATABASE NAME] with your database name.
+ 
+Every database has a unique ID used by Service Broker. This ID must be unique across all databases in a SQL instance. If you already have another database with the same unique ID used by service broker then you can create a new unique ID for service broker with below command.
+ 
+ALTER DATABASE [DATABASE NAME] SET NEW_BROKER
